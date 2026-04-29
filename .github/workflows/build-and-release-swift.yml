@@ -112,23 +112,6 @@ jobs:
         echo "SPOTIFY_VERSION=${${(s/-/)link}[2]%.ipa}" >> $GITHUB_ENV
         echo "SPOTIFY_PACKAGE=$(echo *.ipa)" >> $GITHUB_ENV
 
-    - name: Remove Watch app from Spotify IPA
-      run: |
-        set -e
-
-        TMP_DIR=$(mktemp -d)
-        trap 'rm -rf "$TMP_DIR"' EXIT
-        OUTPUT="$PWD/$SPOTIFY_PACKAGE"
-
-        unzip -q "$SPOTIFY_PACKAGE" -d "$TMP_DIR"
-        rm -rf "$TMP_DIR/Payload/Spotify.app/Watch"
-        rm -f "$SPOTIFY_PACKAGE"
-
-        (
-          cd "$TMP_DIR"
-          zip -qry "$OUTPUT" Payload
-        )
-
     - name: Setup insert-dylib
       run: |
         git clone https://github.com/Tyilo/insert_dylib.git
