@@ -42,6 +42,23 @@ jobs:
             exit 1
           fi
 
+      - name: Remove Watch app from IPA
+        run: |
+          set -e
+
+          TMP_DIR=$(mktemp -d)
+          trap 'rm -rf "$TMP_DIR"' EXIT
+          IPA_PATH="${{ github.workspace }}/spotify.ipa"
+
+          unzip -q "$IPA_PATH" -d "$TMP_DIR"
+          rm -rf "$TMP_DIR/Payload/Spotify.app/Watch"
+          rm -f "$IPA_PATH"
+
+          (
+            cd "$TMP_DIR"
+            zip -qry "$IPA_PATH" Payload
+          )
+
       - name: Download and Validate Tweak
         run: |
           wget "${{ inputs.tweak_url }}" --no-verbose -O ${{ github.workspace }}/eeveespotify.deb
