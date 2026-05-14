@@ -12,6 +12,7 @@ final class BluetoothGamepadPeripheral: NSObject, ObservableObject {
     private var peripheralManager: CBPeripheralManager?
     private var inputReportCharacteristic: CBMutableCharacteristic?
     private var subscribedCentrals: [CBCentral] = []
+    private var protocolMode: UInt8 = 0x01
 
     private let hidServiceUUID = CBUUID(string: "1812")
     private let reportMapUUID = CBUUID(string: "2A4B")
@@ -79,10 +80,10 @@ final class BluetoothGamepadPeripheral: NSObject, ObservableObject {
             permissions: [.readable]
         )
 
-        let protocolMode = CBMutableCharacteristic(
+        let protocolModeCharacteristic = CBMutableCharacteristic(
             type: protocolModeUUID,
             properties: [.read, .writeWithoutResponse],
-            value: Data([0x01]),
+            value: nil,
             permissions: [.readable, .writeable]
         )
 
@@ -101,7 +102,7 @@ final class BluetoothGamepadPeripheral: NSObject, ObservableObject {
         inputReportCharacteristic = input
 
         let service = CBMutableService(type: hidServiceUUID, primary: true)
-        service.characteristics = [hidInformation, reportMap, protocolMode, input]
+        service.characteristics = [hidInformation, reportMap, protocolModeCharacteristic, input]
         peripheralManager.add(service)
     }
 
@@ -202,8 +203,22 @@ extension BluetoothGamepadPeripheral: CBPeripheralManagerDelegate {
         if request.characteristic.uuid == inputReportUUID {
             request.value = state.report
             peripheral.respond(to: request, withResult: .success)
+        } else if request.characteristic.uuid == protocolModeUUID {
+            request.value = Data([protocolMode])
+            peripheral.respond(to: request, withResult: .success)
         } else {
             peripheral.respond(to: request, withResult: .requestNotSupported)
+        }
+    }
+
+    func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        for request in requests {
+            if request.characteristic.uuid == protocolModeUUID, let value = request.value?.first {
+                protocolMode = value
+                peripheral.respond(to: request, withResult: .success)
+            } else {
+                peripheral.respond(to: request, withResult: .requestNotSupported)
+            }
         }
     }
 
