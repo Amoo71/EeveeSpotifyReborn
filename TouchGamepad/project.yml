@@ -6,10 +6,6 @@ options:
 settings:
   base:
     SWIFT_VERSION: 5.0
-    DEVELOPMENT_TEAM: ""
-    CODE_SIGN_STYLE: Manual
-    CODE_SIGNING_ALLOWED: NO
-    CODE_SIGNING_REQUIRED: NO
     IPHONEOS_DEPLOYMENT_TARGET: "15.0"
 targets:
   TouchGamepad:
@@ -27,7 +23,5 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.amoo.touchgamepad
         PRODUCT_NAME: TouchGamepad
-        INFOPLIST_FILE: TouchGamepad/Info.plist
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
