@@ -1,0 +1,67 @@
+name: Build Touch Gamepad IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'TouchGamepad/**'
+      - '.github/workflows/build-touch-gamepad.yml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2.0'
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: TouchGamepad
+        run: xcodegen generate
+
+      - name: Build app
+        working-directory: TouchGamepad
+        run: |
+          xcodebuild \
+            -project TouchGamepad.xcodeproj \
+            -scheme TouchGamepad \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean build
+
+      - name: Package IPA
+        working-directory: TouchGamepad
+        run: |
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name 'TouchGamepad.app' -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "TouchGamepad.app not found"
+            exit 1
+          fi
+          rm -rf Payload TouchGamepad.ipa
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/TouchGamepad.app
+          zip -qry TouchGamepad.ipa Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TouchGamepad.ipa
+          path: TouchGamepad/TouchGamepad.ipa
+          if-no-files-found: error
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2.0.1
+        with:
+          tag_name: touch-gamepad-${{ github.run_number }}
+          name: Touch Gamepad (${{ github.run_number }})
+          files: TouchGamepad/TouchGamepad.ipa
+          draft: true
